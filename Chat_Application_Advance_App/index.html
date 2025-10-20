@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Simple Chat</title>
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+</head>
+<body>
+  <div>
+    <input id="username" placeholder="username">
+    <input id="room" placeholder="room">
+    <button id="join">Join</button>
+  </div>
+  <div id="chat" style="height:300px;overflow:auto;border:1px solid #ccc;margin-top:10px"></div>
+  <input id="msg" placeholder="message">
+  <button id="send">Send</button>
+
+<script>
+const socket = io('http://localhost:5000');
+let room = null, username = null;
+
+document.getElementById('join').onclick = () => {
+  username = document.getElementById('username').value || 'anon';
+  room = document.getElementById('room').value || 'main';
+  socket.emit('join', {room, username});
+};
+
+socket.on('system', d => {
+  append('system: '+d.msg);
+});
+socket.on('history', h => {
+  h.forEach(m => append(`${m.timestamp} | ${m.sender}: ${m.content}`));
+});
+socket.on('message', m => {
+  append(`${m.timestamp} | ${m.sender}: ${m.content}`);
+});
+
+document.getElementById('send').onclick = () => {
+  const text = document.getElementById('msg').value;
+  if (!room) { alert('Join a room first'); return; }
+  socket.emit('message', {room, username, content: text, is_media: false});
+  document.getElementById('msg').value = '';
+};
+
+function append(s){
+  const c = document.getElementById('chat');
+  c.innerHTML += '<div>'+s+'</div>';
+  c.scrollTop = c.scrollHeight;
+}
+</script>
+</body>
+</html>
